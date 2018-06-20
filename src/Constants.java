@@ -10,10 +10,12 @@ public class Constants
     public static final String title = "title";
     public static final String cast = "cast";
     public static final String plot = "plot";
+    public static final String director = "director";
 
     public static float titleWeight = 5;
-    public static float castWeight = 5;
+    public static float castWeight = 8;
     public static float plotWeight = 1;
+    public static float directorWeight = 10;
 
     public static final String index_dir = "index";
     public static final int top_docs = 8;

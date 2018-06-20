@@ -76,17 +76,37 @@ public class Searcher
         updateCastScore(cast);
         String plot = indexSearcher.doc(doc.doc).get(Constants.plot);
         updatePlotScore(plot);
+        String director = indexSearcher.doc(doc.doc).get(Constants.director);
+        updateDirectorScore(director);
+
 
        // documentScore = sortByValues(documentScore);
 
+        ArrayList<SimilarDocument>similarDocuments = new ArrayList<>();
         for (Integer id : documentScore.keySet()) {
             String n = indexSearcher.doc(id).get(Constants.title);
-            System.out.println(n);
-            System.out.print("TitleScore "+documentScore.get(id)[0]+' ');
-            System.out.print("CastScore "+documentScore.get(id)[1]+' ');
-            System.out.print("PlotScore "+documentScore.get(id)[2]+' ');
-            System.out.println();
+            float titleScore = documentScore.get(id)[0];
+            float castScore = documentScore.get(id)[1];
+            float plotScore = documentScore.get(id)[2];
+            float directorScore = documentScore.get(id)[3];
+            similarDocuments.add(new SimilarDocument(id,n,titleScore,castScore,directorScore,plotScore));
         }
+        Collections.sort(similarDocuments);
+        System.out.println("RANKING");
+        int size = 5;
+        if(similarDocuments.size()<size+1)
+            size = similarDocuments.size()-1;
+        for(int i =0;i<=size;i++){
+            System.out.println(i+1+". "+ similarDocuments.get(i).title+ " SCORE: "+similarDocuments.get(i).totalScore);
+            System.out.print("TitleScore: "+similarDocuments.get(i).titleScore);
+            System.out.print(" DirectorScore: "+similarDocuments.get(i).directorScore);
+            System.out.print(" CastScore: "+similarDocuments.get(i).castScore);
+            System.out.print(" PlotScore: "+similarDocuments.get(i).plotScore);
+            System.out.println();
+
+        }
+
+
      //   System.out.println(score+ " "+name+" "+id + " " + size+ "  "+cast+ "Fabuła: "+plot);
     }
 }
@@ -97,7 +117,7 @@ public class Searcher
        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
        {
            if(!documentScore.containsKey(doc.doc)){
-               float k[] = new float[]{doc.score*Constants.titleWeight,0,0};
+               float k[] = new float[]{doc.score*Constants.titleWeight,0,0,0};
                documentScore.put(doc.doc,k);
            }
            else{
@@ -115,7 +135,7 @@ public class Searcher
         for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
         {
             if(!documentScore.containsKey(doc.doc)){
-                float k[] = new float[]{0,doc.score*Constants.castWeight,0};
+                float k[] = new float[]{0,doc.score*Constants.castWeight,0,0};
                 documentScore.put(doc.doc,k);
             }
             else{
@@ -134,7 +154,7 @@ public class Searcher
         for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
         {
             if(!documentScore.containsKey(doc.doc)){
-                float k[] = new float[]{0,0,doc.score*Constants.plotWeight};
+                float k[] = new float[]{0,0,doc.score*Constants.plotWeight,0};
                 documentScore.put(doc.doc,k);
             }
             else{
@@ -146,24 +166,24 @@ public class Searcher
         }
     }
 
-    private static HashMap sortByValues(HashMap map) {
-        List list = new LinkedList(map.entrySet());
-        // Defined Custom Comparator here
-        Collections.sort(list, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                return ((Comparable) ((Map.Entry) (o2)).getValue())
-                        .compareTo(((Map.Entry) (o1)).getValue());
+    private static void updateDirectorScore(String director) throws ParseException, IOException {
+        QueryParser qp = new QueryParser(Constants.plot, analyzer);
+        Query q = qp.parse(director);
+        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
+        {
+            if(!documentScore.containsKey(doc.doc)){
+                float k[] = new float[]{0,0,0,doc.score*Constants.directorWeight};
+                documentScore.put(doc.doc,k);
+            }
+            else{
+                float k[] = documentScore.get(doc.doc);
+                k[3]=doc.score*Constants.directorWeight;
+                documentScore.put(doc.doc,k);
             }
 
-        });
-
-        HashMap sortedHashMap = new LinkedHashMap();
-        for (Iterator it = list.iterator(); it.hasNext();) {
-            Map.Entry entry = (Map.Entry) it.next();
-            sortedHashMap.put(entry.getKey(), entry.getValue());
         }
-        return sortedHashMap;
     }
+
 
     private static IndexReader getIndexReader()
     {

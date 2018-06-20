@@ -180,6 +180,9 @@ public class Indexer
 
         String plot = getPlotFromContent(content); //fabuła z HTMLa
         Field plotField = new TextField(Constants.plot,plot,Field.Store.YES);
+
+        String director = getDirectorFromContent(content); //fabuła z HTMLa
+        Field directorField = new TextField(Constants.director,director,Field.Store.YES);
         // ----------------------------------
 
         // TODO create an INT field (IntPoint) that is indexed
@@ -204,6 +207,7 @@ public class Indexer
         document.add(nameField);
         document.add(castField);
         document.add(plotField);
+        document.add(directorField);
         document.add(intField);
         document.add(sizeField);
 
@@ -245,13 +249,12 @@ public class Indexer
     }
 
     private String getTitleFromContent(String source) {
-        int i = (source.indexOf("name"));
+        int i = source.indexOf("'''''");
+        int i2 = source.indexOf("'''''",source.indexOf("'''''")+1);
+
         String title="none";
-        if (i != -1) {
-            String tmpText = source.substring(i);
-            if((tmpText.indexOf("=")+2)<tmpText.indexOf("\n"))
-            title = tmpText.substring(tmpText.indexOf("=")+2,tmpText.indexOf("\n"));
-        }
+        if(i!=-1)
+        title= source.substring(i+5,i2);
         return title;
     }
 
@@ -259,10 +262,10 @@ public class Indexer
         String cast = "";
         int begin = (source.indexOf("starring"));
         if (begin != -1) {
-            String tmpText = source.substring(begin + 16);
-            int end = (tmpText.indexOf('='));
+            String tmpText = source.substring(begin);
+            int end = tmpText.indexOf('=',tmpText.indexOf('=')+1);
             if (end != -1) {
-                String textToProceed = tmpText.substring(0, end);
+                String textToProceed = tmpText.substring(tmpText.indexOf('='), end);
 
 
                 NameFinderME finder = new NameFinderME(model);
@@ -284,7 +287,26 @@ public class Indexer
 
             }
         }
+        cast =cast.replaceAll("]","");
+        cast = cast.replaceAll("\\[","");
         return cast;
+    }
+
+    private String getDirectorFromContent(String source) {
+        String director = "";
+        int begin = (source.indexOf("director"));
+        if (begin != -1) {
+            String tmpText = source.substring(begin);
+            int end = (tmpText.indexOf('\n'));
+            if (end != -1) {
+                if(tmpText.indexOf('=')+2 <=end){
+                director = tmpText.substring(tmpText.indexOf('=')+2, end);
+               director = director.replaceAll("]","");
+              director =  director.replaceAll("\\[","");
+            }
+            }
+        }
+        return director;
     }
 
     private String getPlotFromContent(String source){
