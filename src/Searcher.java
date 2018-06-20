@@ -34,7 +34,7 @@ public class Searcher
         analyzer = new StandardAnalyzer();
 
         documentScore = new HashMap<>();
-        String movieTitle = "Friday the 13th"; // tutaj tytuł filmu dla wyszukiwarki
+        String movieTitle = "The Conjuring"; // tutaj tytuł filmu dla wyszukiwarki
         //  String actorName = "Anna Breuer Nikolas Jürgens Marvin Grone";
 
         QueryParser qp = new QueryParser(Constants.title, analyzer);
@@ -148,21 +148,23 @@ public class Searcher
     }
 
     private static void updatePlotScore(String plot) throws ParseException, IOException {
-        QueryParser qp = new QueryParser(Constants.plot, analyzer);
-        plot = plot.replace("]", "");
-        Query q = qp.parse(QueryParser.escape(plot.substring(0,6000)));
-        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
-        {
-            if(!documentScore.containsKey(doc.doc)){
-                float k[] = new float[]{0,0,doc.score*Constants.plotWeight,0};
-                documentScore.put(doc.doc,k);
-            }
-            else{
-                float k[] = documentScore.get(doc.doc);
-                k[2]=doc.score*Constants.plotWeight;
-                documentScore.put(doc.doc,k);
-            }
+        if(plot.length()>2) {
+            QueryParser qp = new QueryParser(Constants.plot, analyzer);
+            plot = plot.replace("]", "");
+            if (plot.length() > 6000)
+                plot = plot.substring(0, 6000);
+            Query q = qp.parse(QueryParser.escape(plot));
+            for (ScoreDoc doc : indexSearcher.search(q, Constants.top_docs).scoreDocs) {
+                if (!documentScore.containsKey(doc.doc)) {
+                    float k[] = new float[]{0, 0, doc.score * Constants.plotWeight, 0};
+                    documentScore.put(doc.doc, k);
+                } else {
+                    float k[] = documentScore.get(doc.doc);
+                    k[2] = doc.score * Constants.plotWeight;
+                    documentScore.put(doc.doc, k);
+                }
 
+            }
         }
     }
 
