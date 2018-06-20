@@ -1,3 +1,4 @@
+import opennlp.tools.parser.Cons;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -13,9 +14,14 @@ import org.apache.lucene.store.FSDirectory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.*;
 
 public class Searcher
 {
+
+    public static HashMap<Integer,float[]> documentScore;
+    public static  IndexSearcher indexSearcher;
+    public static Analyzer analyzer;
 
     public static void main(String args[]) throws IOException, ParseException {
         // Load the previously generated index (DONE)
@@ -23,143 +29,28 @@ public class Searcher
         assert reader != null;
 
         // Construct index searcher (DONE)
-        IndexSearcher indexSearcher = new IndexSearcher(reader);
+        indexSearcher = new IndexSearcher(reader);
         // Standard analyzer - might be helpful
-        Analyzer analyzer = new StandardAnalyzer();
+        analyzer = new StandardAnalyzer();
 
-        // TODO your task is to construct several queries and seek for relevant documents
-        // TERM QUERY
-        // A Query that matches documents containing a term.
-        // This may be combined with other terms with a BooleanQuery.
-        // TODO seek for documents that contain word mammal
-        // as you may notice, this word is not normalized (but is should be normalized
-        // in the same way as all documents were normalized when constructing the index.
-        // For that reason you can use analyzer object (utf8TOString()!).
-        // Then, build a Term object (seek in content - Constants.content) and TermQuery.
-        // Lastly, invoke printResultsForQuery.
-        String movieTitle = "American Psycho";
-        {
-            // --------------------------------------
-            // COMPLETE THE CODE HERErmQuery);
-            QueryParser qp = new QueryParser(Constants.title, analyzer);
-            Query q = qp.parse(movieTitle);
-            printResultsForQuery(indexSearcher,q);
-          //  System.out.println("1) term query: mammal (CONTENT)");
-         
-            // --------------------------------------
-        }
+        documentScore = new HashMap<>();
+        String movieTitle = "the conjuring"; // tutaj tytuł filmu dla wyszukiwarki
+        //  String actorName = "Anna Breuer Nikolas Jürgens Marvin Grone";
 
-        // TODO Repeat the previous step for a word "bird".
-        // Compare the results for "mammal" and "bird".
-        String queryBird = "bird";
-        TermQuery tq2;
-        {
-            // --------------------------------------
-            System.out.println("2) term query bird (CONTENT)");
-        
-            // --------------------------------------
-        }
+        QueryParser qp = new QueryParser(Constants.title, analyzer);
+        //   qp.setDefaultOperator(QueryParser.Operator.AND);
+        Query q = qp.parse(movieTitle);
+        getTopPage(indexSearcher, q);
 
-        // TODO now, we seek for documents that contain "mammal" or "bird".
-        // Construct two clauses: BooleanClause (use BooleanClause.Occur to set a proper flag).
-        // The first concerns tq1 ("mammal") and the second concerns ("bird").
-        // To construct BooleanQuery, Use static methods of BooleanQuery.Builder().
-        // Additionally, use setMinimumNumberShouldMatch() with a proper parameter
-        // to generate "mammal" or "bird" rule.
-
-        // Boolean query
-        {
-            // --------------------------------------
-            System.out.println("3) boolean query (CONTENT): mammal or bird");
-       
-            // --------------------------------------
-        }
-
-        // TODO now, your task is to find all documents which size is smaller than 1000bytes.
-        // For this reason, construct Range query.
-        // Use IntPoint.newRangeQuery.
-        {
-            // --------------------------------------
-            System.out.println("4) range query: file size in [0b, 1000b]");
-          
-            // --------------------------------------
-        }
-
-        // TODO let's find all documents which name starts with "ant".
-        // For this reason, construct PrefixQuery.
-        {
-            // --------------------------------------
-            System.out.println("5) Prefix query (FILENAME): ant");
-         
-            // --------------------------------------
-        }
-
-        // TODO let's build a wildcard query".
-        // Construct a WildcardQuery object. Look for documents
-        // which contain a term "eat?" "?" stand for any letter (* for a sequence of letters).
-        {
-            // --------------------------------------
-            System.out.println("6) Wildcard query (CONTENT): eat?");
-    
-            // --------------------------------------
-        }
-
-        // TODO build a fuzzy query for a word "mamml" (use FuzzyQuerry).
-        // Find all documents that contain words which are similar to "mamml".
-        // Which documents have been found?
-        {
-            // --------------------------------------
-            System.out.println("7) Fuzzy querry (CONTENT): mamml?");
-     
-            // --------------------------------------
-        }
-
-        // TODO now, use QueryParser to parse human-entered query strings
-        // and generate query object.
-        // - use AND, OR , NOT, (, ), + (must), and - (must not) to construct boolean queries
-        // - use * and ? to contstruct wildcard queries
-        // - use ~ to construct fuzzy (one word, similarity) or proximity (at least two words) queries
-        // - use - to construct proximity queries
-        // - use \ as an escape character for: + - && || ! ( ) { } [ ] ^ " ~ * ? : \
-        // Consider following 5 examples of queries:
-        String queryP1 = "MaMMal AND bat";
-        String queryP2 = "ante*";
-        String queryP3 = "brd~ ";
-        String queryP4 = "(\"nocturnal life\"~10) OR bat";
-        String queryP5 = "(\"nocturnal life\"~10) OR (\"are nocturnal\"~10)";
-        // Select some query:
-        String selectedQuery = queryP1;
-        // Complete the code here, i.e., build query parser object, parse selected query
-        // to query object, and find relevant documents. Analyze the outcomes.
-        {
-            // --------------------------------------
-            System.out.println("8) query parser = " + selectedQuery);
-     
-            // --------------------------------------
-        }
-
-
-        try
-        {
+        try {
             reader.close();
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private static void printResultsForQuery(IndexSearcher indexSearcher, Query q) throws IOException {
-        // TODO finish this method
-        // - use indexSearcher to search for documents that
-        // are relevant according to the query q
-        // - Get TopDocs object (number of derived documents = Constant.top_docs)
-        // - Iterate over ScoreDocs (in in TopDocs) and print for each document (in separate lines):
-        // a) score
-        // b) filename
-        // c) id
-        // d) file size
-        // You may use indexSearcher to get a Document object for some docId (ScoreDoc)
-        // and use document.get(name of the field) to get the value of id, filename, etc.
+
         ScoreDoc docs[] = (indexSearcher.search(q,Constants.top_docs).scoreDocs);
         // --------------------------------
        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
@@ -167,14 +58,110 @@ public class Searcher
             String score = Float.toString(doc.score);
             String name = indexSearcher.doc(doc.doc).get(Constants.title);
             String id = indexSearcher.doc(doc.doc).get("id");
+            String cast = indexSearcher.doc(doc.doc).get(Constants.cast);
             String size = indexSearcher.doc(doc.doc).get("storedSize");
-            System.out.println(score+ " "+name+" "+id + " " + size);
+            String plot = indexSearcher.doc(doc.doc).get(Constants.plot);
+         //   System.out.println(score+ " "+name+" "+id + " " + size+ "  "+cast+ "Fabuła: "+plot);
         }
+    }
 
+    private static void getTopPage(IndexSearcher indexSearcher, Query q) throws IOException, ParseException {
 
+    // --------------------------------
+    for(ScoreDoc doc:indexSearcher.search(q,1).scoreDocs)
+    {
+        String name = indexSearcher.doc(doc.doc).get(Constants.title);
+        updateTitleScore(name);
+        String cast = indexSearcher.doc(doc.doc).get(Constants.cast);
+        updateCastScore(cast);
+        String plot = indexSearcher.doc(doc.doc).get(Constants.plot);
+        updatePlotScore(plot);
 
+       // documentScore = sortByValues(documentScore);
 
-        // --------------------------------
+        for (Integer id : documentScore.keySet()) {
+            String n = indexSearcher.doc(id).get(Constants.title);
+            System.out.println(n);
+            System.out.print("TitleScore "+documentScore.get(id)[0]+' ');
+            System.out.print("CastScore "+documentScore.get(id)[1]+' ');
+            System.out.print("PlotScore "+documentScore.get(id)[2]+' ');
+            System.out.println();
+        }
+     //   System.out.println(score+ " "+name+" "+id + " " + size+ "  "+cast+ "Fabuła: "+plot);
+    }
+}
+
+   private static void updateTitleScore(String title) throws ParseException, IOException {
+       QueryParser qp = new QueryParser(Constants.title, analyzer);
+       Query q = qp.parse(title);
+       for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
+       {
+           if(!documentScore.containsKey(doc.doc)){
+               float k[] = new float[]{doc.score*Constants.titleWeight,0,0};
+               documentScore.put(doc.doc,k);
+           }
+           else{
+               float k[] = documentScore.get(doc.doc);
+               k[0]=doc.score*Constants.titleWeight;
+               documentScore.put(doc.doc,k);
+           }
+
+       }
+   }
+
+    private static void updateCastScore(String cast) throws ParseException, IOException {
+        QueryParser qp = new QueryParser(Constants.title, analyzer);
+        Query q = qp.parse(cast);
+        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
+        {
+            if(!documentScore.containsKey(doc.doc)){
+                float k[] = new float[]{0,doc.score*Constants.castWeight,0};
+                documentScore.put(doc.doc,k);
+            }
+            else{
+                float k[] = documentScore.get(doc.doc);
+                k[1]=doc.score*Constants.castWeight;
+                documentScore.put(doc.doc,k);
+            }
+
+        }
+    }
+
+    private static void updatePlotScore(String plot) throws ParseException, IOException {
+        QueryParser qp = new QueryParser(Constants.title, analyzer);
+        Query q = qp.parse(QueryParser.escape(plot.substring(0,7000)));
+        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
+        {
+            if(!documentScore.containsKey(doc.doc)){
+                float k[] = new float[]{0,0,doc.score*Constants.plotWeight};
+                documentScore.put(doc.doc,k);
+            }
+            else{
+                float k[] = documentScore.get(doc.doc);
+                k[2]=doc.score*Constants.plotWeight;
+                documentScore.put(doc.doc,k);
+            }
+
+        }
+    }
+
+    private static HashMap sortByValues(HashMap map) {
+        List list = new LinkedList(map.entrySet());
+        // Defined Custom Comparator here
+        Collections.sort(list, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Comparable) ((Map.Entry) (o2)).getValue())
+                        .compareTo(((Map.Entry) (o1)).getValue());
+            }
+
+        });
+
+        HashMap sortedHashMap = new LinkedHashMap();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            Map.Entry entry = (Map.Entry) it.next();
+            sortedHashMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedHashMap;
     }
 
     private static IndexReader getIndexReader()
@@ -190,5 +177,8 @@ public class Searcher
         }
         return null;
     }
+
+
+
 
 }

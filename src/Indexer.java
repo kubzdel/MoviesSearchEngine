@@ -1,3 +1,12 @@
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.postag.POSModel;
+import opennlp.tools.postag.POSTaggerME;
+import opennlp.tools.tokenize.Tokenizer;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
+import opennlp.tools.util.InvalidFormatException;
+import opennlp.tools.util.Span;
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -15,13 +24,22 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Indexer
 {
+    TokenNameFinderModel model = null;
+    InputStream tokenStream = null;
+    Tokenizer tokenizer = null;
+    private POSTaggerME posTaggerME;
+    private TokenizerME tokenizerME;
+
     public static void main(String args[]) throws IOException {
         Indexer indexer = new Indexer();
         indexer.indexDocuments();
     }
+
+
 
     private void indexDocuments() throws IOException {
         // REMOVE PREVIOUSLY GENERATED INDEX (DONE)
@@ -30,6 +48,24 @@ public class Indexer
             FileUtils.deleteDirectory(new File(Constants.index_dir));
         } catch (IOException ignored)
         {
+        }
+        try {
+            tokenStream = new FileInputStream(new File(Constants.TOKENIZER_MODEL));
+
+            model = new TokenNameFinderModel(
+                    new File(Constants.NAME_MODEL));
+            POSModel posModel = new POSModel(new File(Constants.POS_MODEL));
+            posTaggerME = new POSTaggerME(posModel);
+            TokenizerModel tokenModel = new TokenizerModel(tokenStream);
+            tokenizer = new TokenizerME(tokenModel);
+
+            File file1 = new File(Constants.TOKENIZER_MODEL);
+            TokenizerModel tokenizerModel = new TokenizerModel(file1);
+            tokenizerME = new TokenizerME(tokenizerModel);
+        } catch (InvalidFormatException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         // LOAD HTML DOCUMENTS (TODO)
@@ -137,7 +173,13 @@ public class Indexer
 
         String title = getTitleFromContent(content); //tytuł z HTMLa
         Field nameField = new TextField(Constants.title,title,Field.Store.YES);
-       
+
+        String cast = getCastFromContent(content); //obsada z HTMLa
+        Field castField = new TextField(Constants.cast,cast,Field.Store.YES);
+
+
+        String plot = getPlotFromContent(content); //fabuła z HTMLa
+        Field plotField = new TextField(Constants.plot,plot,Field.Store.YES);
         // ----------------------------------
 
         // TODO create an INT field (IntPoint) that is indexed
@@ -160,8 +202,11 @@ public class Indexer
         document.add(idField);
         document.add(contentField);
         document.add(nameField);
+        document.add(castField);
+        document.add(plotField);
         document.add(intField);
         document.add(sizeField);
+
         // ----------------------------------
 
 
@@ -209,6 +254,69 @@ public class Indexer
         }
         return title;
     }
+
+    private String getCastFromContent(String source) {
+        String cast = "";
+        int begin = (source.indexOf("starring"));
+        if (begin != -1) {
+            String tmpText = source.substring(begin + 16);
+            int end = (tmpText.indexOf('='));
+            if (end != -1) {
+                String textToProceed = tmpText.substring(0, end);
+
+
+                NameFinderME finder = new NameFinderME(model);
+
+                // Split the sentence into tokens
+                String[] tokens = tokenizer.tokenize(textToProceed);
+
+                // Find the names in the tokens and return Span objects
+                Span[] nameSpans = finder.find(tokens);
+
+                List<String> people = new ArrayList<String>();
+                String[] spanns = Span.spansToStrings(nameSpans, tokens);
+                for (int i = 0; i < spanns.length; i++) {
+                    cast=cast+ spanns[i]+' ';
+                }
+                if(cast.length()>2)
+                cast = cast.substring(0,cast.length()-2);
+
+
+            }
+        }
+        return cast;
+    }
+
+    private String getPlotFromContent(String source){
+        StringBuilder builder = new StringBuilder();
+        int i = source.indexOf("== Plot ==");
+        if( i != -1) {
+            i += 10;
+        }else if( (i = source.indexOf("==Plot==")) != -1){
+            i += 8;
+        }else if((i = source.indexOf("== Synopsis ==")) != -1){
+            i += 14;
+        }else if((i = source.indexOf("==Synopsis==")) != -1){
+            i += 12;
+        }
+        if(i != -1){
+            int j = source.indexOf("== Cast ==");
+            j = (j != -1) ? j : source.length();
+            String plot = source.substring(i, j);
+            String[] plotArray = tokenizerME.tokenize(plot);
+            String[] posTags = posTaggerME.tag(plotArray);
+            for(int w = 0; w < plotArray.length; w++){
+//                System.out.println(plotArray[w] + " " + posTags[w]);
+                if((posTags[w].charAt(0) == 'V' || posTags[w].charAt(0) == 'N') && builder.indexOf(plotArray[w]) == -1){
+                    builder.append(plotArray[w] +" ");
+                }
+            }
+        }
+
+        return builder.toString();
+    }
+
+
 
 
 
