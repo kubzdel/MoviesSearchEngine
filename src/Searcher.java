@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 public class Searcher
 {
 
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]) throws IOException, ParseException {
         // Load the previously generated index (DONE)
         IndexReader reader = getIndexReader();
         assert reader != null;
@@ -28,7 +28,6 @@ public class Searcher
         Analyzer analyzer = new StandardAnalyzer();
 
         // TODO your task is to construct several queries and seek for relevant documents
-
         // TERM QUERY
         // A Query that matches documents containing a term.
         // This may be combined with other terms with a BooleanQuery.
@@ -38,14 +37,13 @@ public class Searcher
         // For that reason you can use analyzer object (utf8TOString()!).
         // Then, build a Term object (seek in content - Constants.content) and TermQuery.
         // Lastly, invoke printResultsForQuery.
-        String queryMammal = "American Psycho";
-        TermQuery tq1;
+        String movieTitle = "American Psycho";
         {
             // --------------------------------------
-            // COMPLETE THE CODE HERE
-            Term term = new Term("name",  analyzer.normalize("name",queryMammal).utf8ToString());
-            TermQuery termQuery = new TermQuery(term);
-            printResultsForQuery(indexSearcher,termQuery);
+            // COMPLETE THE CODE HERErmQuery);
+            QueryParser qp = new QueryParser(Constants.title, analyzer);
+            Query q = qp.parse(movieTitle);
+            printResultsForQuery(indexSearcher,q);
           //  System.out.println("1) term query: mammal (CONTENT)");
          
             // --------------------------------------
@@ -162,12 +160,12 @@ public class Searcher
         // d) file size
         // You may use indexSearcher to get a Document object for some docId (ScoreDoc)
         // and use document.get(name of the field) to get the value of id, filename, etc.
-
+        ScoreDoc docs[] = (indexSearcher.search(q,Constants.top_docs).scoreDocs);
         // --------------------------------
        for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
         {
             String score = Float.toString(doc.score);
-            String name = indexSearcher.doc(doc.doc).get("name");
+            String name = indexSearcher.doc(doc.doc).get(Constants.title);
             String id = indexSearcher.doc(doc.doc).get("id");
             String size = indexSearcher.doc(doc.doc).get("storedSize");
             System.out.println(score+ " "+name+" "+id + " " + size);

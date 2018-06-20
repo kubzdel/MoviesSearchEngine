@@ -135,8 +135,8 @@ public class Indexer
         // and contains file name
         // ----------------------------------
 
-        String name = getNameFromContent(content); //tytuł z HTMLa
-        Field nameField = new TextField("name",name,Field.Store.YES);
+        String title = getTitleFromContent(content); //tytuł z HTMLa
+        Field nameField = new TextField(Constants.title,title,Field.Store.YES);
        
         // ----------------------------------
 
@@ -199,7 +199,7 @@ public class Indexer
         return handler.toString();
     }
 
-    private String getNameFromContent(String source) {
+    private String getTitleFromContent(String source) {
         int i = (source.indexOf("name"));
         String title="none";
         if (i != -1) {
