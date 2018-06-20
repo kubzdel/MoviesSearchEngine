@@ -11,12 +11,12 @@ public class Constants
     public static final String cast = "cast";
     public static final String plot = "plot";
 
-    public static float titleWeight = 1;
-    public static float castWeight = 1;
+    public static float titleWeight = 5;
+    public static float castWeight = 5;
     public static float plotWeight = 1;
 
     public static final String index_dir = "index";
-    public static final int top_docs = 5;
+    public static final int top_docs = 8;
 
     public static String LANG_DETECT_MODEL = "models/langdetect-183.bin";
     public static String TOKENIZER_MODEL = "models/en-token.bin";

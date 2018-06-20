@@ -34,7 +34,7 @@ public class Searcher
         analyzer = new StandardAnalyzer();
 
         documentScore = new HashMap<>();
-        String movieTitle = "the conjuring"; // tutaj tytuł filmu dla wyszukiwarki
+        String movieTitle = "Friday the 13th"; // tutaj tytuł filmu dla wyszukiwarki
         //  String actorName = "Anna Breuer Nikolas Jürgens Marvin Grone";
 
         QueryParser qp = new QueryParser(Constants.title, analyzer);
@@ -110,8 +110,8 @@ public class Searcher
    }
 
     private static void updateCastScore(String cast) throws ParseException, IOException {
-        QueryParser qp = new QueryParser(Constants.title, analyzer);
-        Query q = qp.parse(cast);
+        QueryParser qp = new QueryParser(Constants.cast, analyzer);
+        Query q = qp.parse(QueryParser.escape(cast));
         for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
         {
             if(!documentScore.containsKey(doc.doc)){
@@ -128,8 +128,9 @@ public class Searcher
     }
 
     private static void updatePlotScore(String plot) throws ParseException, IOException {
-        QueryParser qp = new QueryParser(Constants.title, analyzer);
-        Query q = qp.parse(QueryParser.escape(plot.substring(0,7000)));
+        QueryParser qp = new QueryParser(Constants.plot, analyzer);
+        plot = plot.replace("]", "");
+        Query q = qp.parse(QueryParser.escape(plot.substring(0,6000)));
         for(ScoreDoc doc:indexSearcher.search(q,Constants.top_docs).scoreDocs)
         {
             if(!documentScore.containsKey(doc.doc)){
