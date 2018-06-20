@@ -204,10 +204,12 @@ public class Indexer
         String title="none";
         if (i != -1) {
             String tmpText = source.substring(i);
-            if(tmpText.indexOf("=")<tmpText.indexOf("\n"))
-            title = tmpText.substring(tmpText.indexOf("=")+1,tmpText.indexOf("\n"));
+            if((tmpText.indexOf("=")+2)<tmpText.indexOf("\n"))
+            title = tmpText.substring(tmpText.indexOf("=")+2,tmpText.indexOf("\n"));
         }
         return title;
     }
+
+
 
 }

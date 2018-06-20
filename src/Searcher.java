@@ -38,16 +38,15 @@ public class Searcher
         // For that reason you can use analyzer object (utf8TOString()!).
         // Then, build a Term object (seek in content - Constants.content) and TermQuery.
         // Lastly, invoke printResultsForQuery.
-        String queryMammal = "MaMMal";
+        String queryMammal = "American Psycho";
         TermQuery tq1;
         {
             // --------------------------------------
             // COMPLETE THE CODE HERE
-            Term term = new Term("content");
-            analyzer.normalize(Constants.content,queryMammal);
+            Term term = new Term("name",  analyzer.normalize("name",queryMammal).utf8ToString());
             TermQuery termQuery = new TermQuery(term);
             printResultsForQuery(indexSearcher,termQuery);
-            System.out.println("1) term query: mammal (CONTENT)");
+          //  System.out.println("1) term query: mammal (CONTENT)");
          
             // --------------------------------------
         }
